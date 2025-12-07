@@ -1,160 +1,150 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>RUMMI TECH Registration</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>RUMMI TECH — VCF Generator</title>
   <style>
-    body { font-family: Arial; padding: 20px; }
-    #adminPanel { display: none; border: 2px solid black; padding: 10px; margin-top: 20px; }
-    #downloadBtn { display: none; margin-top: 10px; }
+    :root{--green:#00ff00;--bg:#000}
+    html,body{height:100%;margin:0}
+    body{
+      background:var(--bg);
+      color:var(--green);
+      font-family: "Courier New", monospace;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:20px;
+    }
+    .card{
+      width:100%;
+      max-width:680px;
+      background:rgba(0,0,0,0.6);
+      border:1px solid rgba(0,255,0,0.15);
+      border-radius:10px;
+      padding:18px;
+      box-shadow:0 0 20px rgba(0,255,0,0.04);
+    }
+    h1{margin:0 0 14px 0;text-align:center}
+    form{display:flex;flex-direction:column;gap:10px}
+    input[type="text"], input[type="tel"], input[type="number"], input[type="email"], input[type="password"]{
+      padding:10px;border-radius:6px;border:1px solid rgba(0,255,0,0.12);
+      background:#000;color:var(--green);font-size:15px;font-family:inherit;
+    }
+    button{
+      padding:10px;border-radius:8px;border:1px solid rgba(0,255,0,0.12);
+      background:#000;color:var(--green);cursor:pointer;font-size:15px;
+    }
+    button.primary{background:var(--green);color:#000;font-weight:700}
+    .row{display:flex;gap:8px;flex-wrap:wrap}
+    .tracker{margin-top:14px;text-align:center}
+    .small{font-size:13px;opacity:0.9}
+    #progressBar{height:14px;border-radius:999px;background:transparent;border:1px solid rgba(0,255,0,0.08);overflow:hidden;margin-top:8px}
+    #progressFill{height:100%;width:0%;background:linear-gradient(90deg,#00ff00,#88ff88)}
+    .adminOnly{display:none;margin-top:12px}
+    .flex-between{display:flex;justify-content:space-between;align-items:center}
+    .muted{color:rgba(0,255,0,0.6);font-size:13px}
+    footer{margin-top:12px;text-align:center;font-size:12px;color:rgba(0,255,0,0.6)}
+    @media(max-width:560px){.card{padding:12px}}
   </style>
 </head>
 <body>
+  <div class="card" role="main">
+    <h1>RUMMI TECH — VCF Generator</h1>
 
-<h2>🔥 RUMMI TECH Invite Registration</h2>
+    <!-- Registration form -->
+    <form id="vcfForm" autocomplete="off" novalidate>
+      <input id="name" type="text" placeholder="Full name" required />
+      <input id="phone" type="tel" placeholder="+254712345678" required />
+      <div class="row">
+        <button id="submitBtn" type="submit">Register</button>
+        <button id="downloadBtn" type="button" style="display:none" class="primary">Download VCF (All)</button>
+      </div>
+      <div id="downloadMessage" class="small muted"></div>
+    </form>
 
-<div id="registerSection">
-  <input id="name" placeholder="Your Name" /> <br><br>
-  <input id="phone" placeholder="+254712345678" /> <br><br>
-  <button id="submitBtn">Submit</button>
-</div>
+    <!-- Tracker -->
+    <div class="tracker">
+      <div class="flex-between">
+        <div>Target: <strong id="targetCount">0</strong></div>
+        <div>Registered: <strong id="registeredCount">0</strong></div>
+      </div>
+      <div class="flex-between" style="margin-top:6px">
+        <div>Remaining: <strong id="remainingCount">0</strong></div>
+        <div>Progress: <strong id="progressPercent">0%</strong></div>
+      </div>
+      <div id="progressBar"><div id="progressFill"></div></div>
+    </div>
 
-<hr>
+    <!-- Admin controls -->
+    <div id="adminPanel" class="adminOnly">
+      <hr style="border:none;border-top:1px solid rgba(0,255,0,0.06);margin:12px 0" />
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <div style="flex:1;min-width:220px">
+          <input id="adminEmail" type="email" placeholder="Admin email" />
+        </div>
+        <div style="flex:1;min-width:220px">
+          <input id="adminPassword" type="password" placeholder="Password" />
+        </div>
+        <div style="display:flex;gap:6px;flex-shrink:0">
+          <button id="loginBtn">Login</button>
+          <button id="logoutBtn" style="display:none">Logout</button>
+        </div>
+      </div>
 
-<h3>Progress</h3>
-<p>Registered: <span id="registered">0</span> / <span id="target">100</span></p>
-<p>Remaining: <span id="remaining">100</span></p>
-<p>Progress: <span id="progress">0%</span></p>
+      <div style="margin-top:10px;display:flex;gap:8px;align-items:center">
+        <input id="targetInput" type="number" placeholder="Set new target" min="1" />
+        <button id="setTargetBtn">Set Target</button>
+        <button id="resetBtn" style="background:#440000;color:var(--green)">Reset Data</button>
+      </div>
 
-<p id="downloadMessage">VCF will be available after the target is reached.</p>
-<button id="downloadBtn">Download VCF</button>
+      <div style="margin-top:8px" class="muted small" id="adminMsg"></div>
+    </div>
 
-<hr>
+    <footer>© RUMMI TECH</footer>
+  </div>
 
-<h3>Admin Login</h3>
-<input id="email" placeholder="Admin Email" /><br><br>
-<input id="password" type="password" placeholder="Admin Password" /><br><br>
-<button id="loginBtn">Login</button>
+  <!-- Firebase + app -->
+  <script type="module">
+    // imports
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+    import {
+      getDatabase, ref, set, push, onValue, get, child, remove
+    } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+    import {
+      getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged
+    } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
-<div id="adminPanel">
-  <h3>ADMIN PANEL</h3>
+    // your firebase config (already provided)
+    const firebaseConfig = {
+      apiKey: "AIzaSyDnVw3m6tVSZFllGvI8M0KnvOelyfCNmyU",
+      authDomain: "rummitechvcf.firebaseapp.com",
+      projectId: "rummitechvcf",
+      storageBucket: "rummitechvcf.firebasestorage.app",
+      messagingSenderId: "478685720198",
+      appId: "1:478685720198:web:8f3447fe8fdf535e7c6b07",
+      measurementId: "G-ZQP9152Z5R"
+    };
 
-  <label>Change Target:</label><br>
-  <input id="targetInput" type="number" /><br><br>
-  <button id="setTargetBtn">Update Target</button><br><br>
+    // init
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const auth = getAuth(app);
 
-  <button id="resetBtn" style="background:red;color:white;">RESET REGISTRATIONS</button>
-</div>
+    // DOM
+    const form = document.getElementById("vcfForm");
+    const nameInput = document.getElementById("name");
+    const phoneInput = document.getElementById("phone");
+    const submitBtn = document.getElementById("submitBtn");
+    const downloadBtn = document.getElementById("downloadBtn");
+    const downloadMessage = document.getElementById("downloadMessage");
 
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-  import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
-  import { 
-    getDatabase, ref, set, push, onValue, remove 
-  } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+    const registeredEl = document.getElementById("registeredCount");
+    const remainingEl = document.getElementById("remainingCount");
+    const progressEl = document.getElementById("progressPercent");
+    const targetEl = document.getElementById("targetCount");
+    const progressFill = document.getElementById("progressFill");
 
-  
-  // --------- YOUR FIREBASE CONFIG ----------
-  const firebaseConfig = {
-    apiKey: "AIzaSyDnVw3m6tVSZFllGvI8M0KnvOelyfCNmyU",
-    authDomain: "rummitechvcf.firebaseapp.com",
-    projectId: "rummitechvcf",
-    storageBucket: "rummitechvcf.firebasestorage.app",
-    messagingSenderId: "478685720198",
-    appId: "1:478685720198:web:8f3447fe8fdf535e7c6b07",
-    measurementId: "G-ZQP9152Z5R"
-  };
-
-  // Initialize Firebase
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth();
-  const db = getDatabase();
-
-  const submitBtn = document.getElementById("submitBtn");
-  const registeredEl = document.getElementById("registered");
-  const targetEl = document.getElementById("target");
-  const remainingEl = document.getElementById("remaining");
-  const progressEl = document.getElementById("progress");
-  const downloadBtn = document.getElementById("downloadBtn");
-  const downloadMessage = document.getElementById("downloadMessage");
-  const adminPanel = document.getElementById("adminPanel");
-
-  // ---------- SAVE REGISTRATION ----------
-  submitBtn.addEventListener("click", async () => {
-    const name = document.getElementById("name").value.trim();
-    const phone = document.getElementById("phone").value.trim();
-
-    if (!name || !phone.startsWith("+") || phone.length < 10) {
-      alert("Enter valid name and phone (+ country code format)");
-      return;
-    }
-
-    const regRef = ref(db, "registrations");
-    await push(regRef, {
-      name, phone,
-      timestamp: new Date().toISOString()
-    });
-
-    alert("Registered successfully!");
-  });
-
-
-  // --------- REAL-TIME COUNT UPDATE ---------
-  const registrationsRef = ref(db, "registrations");
-  let targetCount = 100;
-
-  onValue(ref(db, "target"), (snapshot) => {
-    if(snapshot.exists()){
-      targetCount = snapshot.val();
-      targetEl.textContent = targetCount;
-    }
-  });
-
-  onValue(registrationsRef, (snapshot) => {
-    const count = snapshot.exists() ? Object.keys(snapshot.val()).length : 0;
-    registeredEl.textContent = count;
-    remainingEl.textContent = Math.max(targetCount - count, 0);
-    progressEl.textContent = Math.min(((count / targetCount) * 100).toFixed(0), 100) + "%";
-
-    if (count >= targetCount) {
-      downloadBtn.style.display = "inline-block";
-      downloadMessage.textContent = "";
-    } else {
-      downloadBtn.style.display = "none";
-      downloadMessage.textContent = `VCF available after ${targetCount} registrations`;
-    }
-  });
-
-
-  // --------- ADMIN LOGIN ----------
-  loginBtn.onclick = () => {
-    signInWithEmailAndPassword(auth, email.value, password.value)
-    .then(() => {
-      adminPanel.style.display = "block";
-      alert("Admin logged in");
-    })
-    .catch(err => alert(err.message));
-  };
-
-  // -------- UPDATE TARGET ----------
-  document.getElementById("setTargetBtn").onclick = async () => {
-    const value = Number(document.getElementById("targetInput").value);
-    if(value > 0){
-      await set(ref(db, "target"), value);
-      alert("Target updated");
-    } else {
-      alert("Enter valid number");
-    }
-  };
-
-  // -------- RESET DATABASE ----------
-  document.getElementById("resetBtn").onclick = async () => {
-    if(confirm("Are you sure? This will delete all records!")){
-      await remove(ref(db, "registrations"));
-      alert("All registrations cleared!");
-    }
-  };
-</script>
-
-</body>
-</html>
+    const adminPanel = document.getElementById("adminPanel");
+    const adminEmail = document.getElementById("adminEmail");
+    const adminPassword
