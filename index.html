@@ -1,76 +1,117 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>VCF Generator - RUMMI TECH</title>
   <style>
-    body {
-      background-color: black;
-      color: lime;
-      font-family: monospace;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
+    :root{--green:#00ff00;--bg:#000}
+    html,body{height:100%;margin:0}
+    body{
+      background:var(--bg);
+      color:var(--green);
+      font-family: "Courier New", monospace;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:20px;
     }
-    input, button {
-      padding: 10px;
-      margin: 5px;
-      font-size: 16px;
+    .card{
+      width:100%;
+      max-width:520px;
+      background:rgba(0,0,0,0.6);
+      border:1px solid rgba(0,255,0,0.25);
+      border-radius:12px;
+      padding:18px;
+      box-shadow:0 0 20px rgba(0,255,0,0.06);
     }
-    button {
-      cursor: pointer;
+    h1{margin:0 0 14px 0;text-align:center;text-shadow:0 0 6px rgba(0,255,0,0.15)}
+    form{display:flex;flex-direction:column;gap:10px}
+    input[type="text"], input[type="tel"], input[type="number"]{
+      padding:10px;border-radius:6px;border:1px solid rgba(0,255,0,0.2);
+      background:#000;color:var(--green);font-size:15px;font-family:inherit;
     }
-    #tracker {
-      margin-top: 20px;
+    button{
+      padding:10px;border-radius:8px;border:1px solid rgba(0,255,0,0.2);
+      background:#000;color:var(--green);cursor:pointer;font-size:15px;
     }
-    #downloadBtn {
-      margin-top: 10px;
-    }
+    button.primary{background:var(--green);color:#000;font-weight:700}
+    .row{display:flex;gap:8px;flex-wrap:wrap}
+    .tracker{margin-top:14px;text-align:center}
+    .small{font-size:13px;opacity:0.9}
+    #progressBar{height:14px;border-radius:999px;background:transparent;border:1px solid rgba(0,255,0,0.15);overflow:hidden;margin-top:8px}
+    #progressFill{height:100%;width:0%;background:linear-gradient(90deg,#00ff00,#88ff88)}
+    .adminOnly{display:none;margin-top:12px}
+    .flex-between{display:flex;justify-content:space-between;align-items:center}
+    .muted{color:rgba(0,255,0,0.6);font-size:13px}
+    footer{margin-top:12px;text-align:center;font-size:12px;color:rgba(0,255,0,0.7)}
+    @media(max-width:480px){.card{padding:14px}}
   </style>
 </head>
 <body>
+  <div class="card" role="main">
+    <h1>RUMMI TECH — VCF Generator</h1>
 
-  <h1>VCF Generator</h1>
+    <!-- Registration form -->
+    <form id="vcfForm" autocomplete="off" novalidate>
+      <input id="name" type="text" placeholder="Full name" required />
+      <input id="phone" type="tel" placeholder="+254712345678" required />
+      <div class="row">
+        <button id="submitBtn" type="submit">Submit</button>
+        <button id="downloadBtn" type="button" style="display:none" class="primary">Download VCF (All)</button>
+      </div>
+      <div id="downloadMessage" class="small muted"></div>
+    </form>
 
-  <!-- Registration Form -->
-  <form id="vcfForm">
-    <input type="text" id="name" placeholder=" WhatsApp Name" required>
-    <input type="tel" id="phone" placeholder="+254 712345678" required>
-    <button type="submit">Submit</button>
-  </form>
+    <!-- Tracker -->
+    <div class="tracker">
+      <div class="flex-between">
+        <div>Target: <strong id="targetCount">0</strong></div>
+        <div>Registered: <strong id="registeredCount">0</strong></div>
+      </div>
+      <div class="flex-between" style="margin-top:6px">
+        <div>Remaining: <strong id="remainingCount">0</strong></div>
+        <div>Progress: <strong id="progressPercent">0%</strong></div>
+      </div>
+      <div id="progressBar"><div id="progressFill"></div></div>
+    </div>
 
-  <!-- Admin Controls -->
-  <button id="loginBtn">Admin Login</button>
-  <button id="resetBtn" style="display:none;">Reset Data</button>
+    <!-- Admin controls (appear only when admin logged in) -->
+    <div id="adminPanel" class="adminOnly">
+      <hr style="border:none;border-top:1px solid rgba(0,255,0,0.08);margin:12px 0" />
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <button id="loginBtn">Admin login</button>
+        <button id="logoutBtn" style="display:none">Logout</button>
+        <button id="resetBtn" style="display:none">Reset Data</button>
+      </div>
 
-  <!-- Admin Target Setting -->
-  <div id="adminTargetDiv" style="display:none; margin-top:10px;">
-    <input type="number" id="targetInput" placeholder="Set target">
-    <button id="setTargetBtn">Set Target</button>
+      <div style="margin-top:10px;display:flex;gap:8px;align-items:center">
+        <input id="targetInput" type="number" placeholder="Set new target" min="1" />
+        <button id="setTargetBtn" style="display:none">Set Target</button>
+      </div>
+
+      <div id="adminMsg" class="muted small" style="margin-top:8px"></div>
+    </div>
+
+    <footer>© RUMMI TECH</footer>
   </div>
 
-  <!-- Tracker -->
-  <div id="tracker">
-    <p>Target: <span id="targetCount">100</span></p>
-    <p>Registered: <span id="registeredCount">0</span></p>
-    <p>Remaining: <span id="remainingCount">0</span></p>
-    <p>Progress: <span id="progressPercent">0%</span></p>
-  </div>
-
-  <!-- VCF Download -->
-  <button id="downloadBtn" style="display:none;">Download VCF</button>
-  <p id="downloadMessage" style="color:red;"></p>
-
-  <!-- Firebase SDKs -->
+  <!-- Firebase + App script -->
   <script type="module">
+    // ------------------------------
+    // Firebase modular SDK imports
+    // ------------------------------
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-    import { getDatabase, ref, push, get, child, remove, onValue ,set} from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
-    import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+    import {
+      getDatabase, ref, set, push, onValue, get, child, remove
+    } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+    import {
+      getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged
+    } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
-    // ===== Firebase Config (Your Provided Details) =====
+    // ------------------------------
+    // Your Firebase config (already provided)
+    // ------------------------------
     const firebaseConfig = {
       apiKey: "AIzaSyDnVw3m6tVSZFllGvI8M0KnvOelyfCNmyU",
       authDomain: "rummitechvcf.firebaseapp.com",
@@ -81,122 +122,76 @@
       measurementId: "G-ZQP9152Z5R"
     };
 
+    // ------------------------------
+    // Init Firebase
+    // ------------------------------
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
     const auth = getAuth(app);
 
-    // ===== Elements =====
-    const loginBtn = document.getElementById("loginBtn");
-    const resetBtn = document.getElementById("resetBtn");
-    const adminTargetDiv = document.getElementById("adminTargetDiv");
-    const targetInput = document.getElementById("targetInput");
-    const setTargetBtn = document.getElementById("setTargetBtn");
+    // ------------------------------
+    // DOM Elements
+    // ------------------------------
     const form = document.getElementById("vcfForm");
+    const nameInput = document.getElementById("name");
+    const phoneInput = document.getElementById("phone");
+    const submitBtn = document.getElementById("submitBtn");
+    const downloadBtn = document.getElementById("downloadBtn");
+    const downloadMessage = document.getElementById("downloadMessage");
+
     const registeredEl = document.getElementById("registeredCount");
     const remainingEl = document.getElementById("remainingCount");
     const progressEl = document.getElementById("progressPercent");
     const targetEl = document.getElementById("targetCount");
-    const downloadBtn = document.getElementById("downloadBtn");
-    const downloadMessage = document.getElementById("downloadMessage");
+    const progressFill = document.getElementById("progressFill");
 
-    let targetCount = 100; // default
+    const adminPanel = document.getElementById("adminPanel");
+    const loginBtn = document.getElementById("loginBtn");
+    const logoutBtn = document.getElementById("logoutBtn");
+    const resetBtn = document.getElementById("resetBtn");
+    const setTargetBtn = document.getElementById("setTargetBtn");
+    const targetInput = document.getElementById("targetInput");
+    const adminMsg = document.getElementById("adminMsg");
 
-    // ===== Admin Login =====
-    loginBtn.addEventListener("click", () => {
-      const email = prompt("Enter admin email:");
-      const password = prompt("Enter password:");
-      signInWithEmailAndPassword(auth, email, password)
-        .then(() => alert("Logged in as Admin"))
-        .catch(err => alert("Login Failed: " + err.message));
+    // ------------------------------
+    // Globals
+    // ------------------------------
+    let targetCount = 100; // fallback until loaded from DB
+
+    // Utility: sanitize/escape for VCF values (basic)
+    function escapeV(v){
+      return String(v).replace(/\\/g,"\\\\").replace(/\n/g,"\\n").replace(/,/g,"\\,").replace(/;/g,"\\;");
+    }
+
+    // ------------------------------
+    // Load target from DB (real-time)
+    // ------------------------------
+    const targetRef = ref(db, "target");
+    onValue(targetRef, (snap) => {
+      if (snap.exists()) {
+        targetCount = Number(snap.val());
+        targetEl.textContent = targetCount;
+      } else {
+        // if not set, show fallback and write default target to DB (optional)
+        targetEl.textContent = targetCount;
+      }
+      // update UI in case registrations already loaded
+      updateUIFromCounts();
     });
 
-    // ===== Check Admin Role =====
-    onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        const snap = await get(child(ref(db), "users/" + user.uid));
-        if (snap.exists() && snap.val().role === "admin") {
-          resetBtn.style.display = "block";
-          adminTargetDiv.style.display = "block";
-
-          // Load current target from Firebase
-          const targetSnap = await get(ref(db, "target"));
-          if (targetSnap.exists()) {
-            targetCount = targetSnap.val();
-            targetEl.textContent = targetCount;
-          }
-        }
-      }
-    });
-
-    // ===== Set Target =====
-    setTargetBtn.addEventListener("click", async () => {
-  const newTarget = parseInt(targetInput.value);
-  if (isNaN(newTarget) || newTarget <= 0) {
-    alert("Enter a valid number");
-    return;
-  }
-
-  try {
-    const targetRef = ref(db, "target"); // reference to target node
-    await set(targetRef, newTarget);     // write the new target
-    targetCount = newTarget;
-    targetEl.textContent = targetCount;
-    alert("Target updated to " + targetCount);
-  } catch(err) {
-    alert("Error updating target: " + err.message);
-  }
-})
-
-    // ===== Reset Data =====
-    resetBtn.addEventListener("click", async () => {
-      if (!confirm("Are you sure? This will delete all registered users.")) return;
-      try {
-        await remove(ref(db, "registrations"));
-        alert("Data reset successfully!");
-      } catch(err) {
-        alert("Error resetting data: " + err.message);
-      }
-    });
-
-    // ===== Form Submission =====
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const name = document.getElementById("name").value.trim();
-      let phone = document.getElementById("phone").value.trim();
-      phone = phone.replace(/\s+/g, "");
-
-      if (!phone.startsWith("+") || phone.length < 8) {
-        alert("Please enter a valid phone number with country code, e.g., +254712345678");
-        return;
-      }
-
-      const timestamp = new Date().toISOString();
-
-      if (!name || !phone) {
-        alert("Please fill in all fields");
-        return;
-      }
-
-      try {
-        await push(ref(db, "registrations"), { fn: name, tel: phone, timestamp });
-        alert("Registration successful!");
-      } catch(err) {
-        alert("Error saving registration: " + err.message);
-      }
-
-      form.reset();
-    });
-
-    // ===== Tracker & Conditional Download =====
+    // ------------------------------
+    // Registrations listener (real-time)
+    // ------------------------------
     const registrationsRef = ref(db, "registrations");
-
-    onValue(registrationsRef, (snapshot) => {
-      const count = snapshot.exists() ? Object.keys(snapshot.val()).length : 0;
+    onValue(registrationsRef, (snap) => {
+      const count = snap.exists() ? Object.keys(snap.val()).length : 0;
       registeredEl.textContent = count;
       remainingEl.textContent = Math.max(targetCount - count, 0);
-      progressEl.textContent = Math.min(((count / targetCount) * 100).toFixed(0), 100) + "%";
+      const pct = targetCount > 0 ? Math.min(Math.round((count / targetCount) * 100), 100) : 0;
+      progressEl.textContent = pct + "%";
+      progressFill.style.width = pct + "%";
 
-      if (count >= targetCount) {
+      if (count >= targetCount && targetCount > 0) {
         downloadBtn.style.display = "inline-block";
         downloadMessage.textContent = "";
       } else {
@@ -205,40 +200,93 @@
       }
     });
 
-    // ===== Dynamic VCF Generation =====
-    downloadBtn.addEventListener("click", async () => {
-      const name = document.getElementById("name").value.trim();
-      let phone = document.getElementById("phone").value.trim();
+    // Helper to refresh UI (if needed)
+    function updateUIFromCounts(){
+      // triggered after target load to recalc remaining/progress - reads from current snapshot
+      get(registrationsRef).then(snap => {
+        const count = snap.exists() ? Object.keys(snap.val()).length : 0;
+        registeredEl.textContent = count;
+        remainingEl.textContent = Math.max(targetCount - count, 0);
+        const pct = targetCount > 0 ? Math.min(Math.round((count / targetCount) * 100), 100) : 0;
+        progressEl.textContent = pct + "%";
+        progressFill.style.width = pct + "%";
+        if (count >= targetCount && targetCount > 0) {
+          downloadBtn.style.display = "inline-block";
+          downloadMessage.textContent = "";
+        } else {
+          downloadBtn.style.display = "none";
+          downloadMessage.textContent = `VCF will be available after ${targetCount} registrations are reached`;
+        }
+      }).catch(()=>{ /* ignore */ });
+    }
+
+    // ------------------------------
+    // Registration submit handler
+    // ------------------------------
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const name = (nameInput.value || "").trim();
+      let phone = (phoneInput.value || "").trim();
+
+      // Normalize phone: remove spaces
       phone = phone.replace(/\s+/g, "");
 
-      if (!name || !phone || !phone.startsWith("+")) {
-        alert("Invalid name or phone number.");
+      // Validate
+      if (!name) { alert("Please enter a name"); return; }
+      if (!phone || !phone.startsWith("+") || phone.length < 8) {
+        alert("Enter phone with country code, e.g. +254712345678");
         return;
       }
 
-      const vcfContent = 
-`BEGIN:VCARD
-VERSION:3.0
-FN:${name}
-TEL:${phone}
-END:VCARD`;
-
-      const blob = new Blob([vcfContent], { type: 'text/vcard' });
-      const url = URL.createObjectURL(blob);
-
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${name.replace(/\s+/g, "_")}.vcf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      // Write registration
+      try {
+        await push(registrationsRef, { fn: name, tel: phone, timestamp: new Date().toISOString() });
+        // success feedback (non-blocking)
+        nameInput.value = "";
+        phoneInput.value = "";
+        // small message shown in the registration form
+        downloadMessage.textContent = "Registration successful — thank you.";
+        setTimeout(()=>{ if(downloadMessage.textContent === "Registration successful — thank you.") downloadMessage.textContent = ""; }, 2500);
+      } catch (err) {
+        alert("Error saving registration: " + err.message);
+      }
     });
 
-  </script>
+    // ------------------------------
+    // Admin login/logout/reset/target update
+    // ------------------------------
+    // Show admin panel if user is admin
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        // not logged in
+        adminPanel.classList.remove("visible");
+        loginBtn.style.display = "inline-block";
+        logoutBtn.style.display = "none";
+        resetBtn.style.display = "none";
+        setTargetBtn.style.display = "none";
+        adminMsg.textContent = "";
+        return;
+      }
 
-</body>
-  </html>
+      // check user role in DB
+      try {
+        const userSnap = await get(child(ref(db), `users/${user.uid}`));
+        if (userSnap.exists() && userSnap.val().role === "admin") {
+          // show admin features
+          adminPanel.style.display = "block";
+          loginBtn.style.display = "none";
+          logoutBtn.style.display = "inline-block";
+          resetBtn.style.display = "inline-block";
+          setTargetBtn.style.display = "inline-block";
+          adminMsg.textContent = `Logged in as admin (uid: ${user.uid})`;
+        } else {
+          // logged-in but not admin
+          adminPanel.style.display = "none";
+          loginBtn.style.display = "inline-block";
+        }
+      } catch (err) {
+        adminMsg.textContent = "Error checking admin role";
+      }
+    });
 
-
-
+    // Admin login flow (prompt)
