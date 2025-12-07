@@ -67,7 +67,7 @@
   <!-- Firebase SDKs -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-    import { getDatabase, ref, push, get, child, remove, onValue } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+    import { getDatabase, ref, push, get, child, remove, onValue ,set} from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
     import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
     // ===== Firebase Config (Your Provided Details) =====
@@ -130,20 +130,22 @@
 
     // ===== Set Target =====
     setTargetBtn.addEventListener("click", async () => {
-      const newTarget = parseInt(targetInput.value);
-      if (isNaN(newTarget) || newTarget <= 0) {
-        alert("Enter a valid number");
-        return;
-      }
-      try {
-        await ref(db, "target").set(newTarget);
-        targetCount = newTarget;
-        targetEl.textContent = targetCount;
-        alert("Target updated to " + targetCount);
-      } catch(err) {
-        alert("Error updating target: " + err.message);
-      }
-    });
+  const newTarget = parseInt(targetInput.value);
+  if (isNaN(newTarget) || newTarget <= 0) {
+    alert("Enter a valid number");
+    return;
+  }
+
+  try {
+    const targetRef = ref(db, "target"); // reference to target node
+    await set(targetRef, newTarget);     // write the new target
+    targetCount = newTarget;
+    targetEl.textContent = targetCount;
+    alert("Target updated to " + targetCount);
+  } catch(err) {
+    alert("Error updating target: " + err.message);
+  }
+})
 
     // ===== Reset Data =====
     resetBtn.addEventListener("click", async () => {
@@ -237,4 +239,5 @@ END:VCARD`;
 
 </body>
   </html>
+
 
