@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>VCF Generator - Rummitech</title>
+</head>
+<body>
+<h1>Rummitech VCF Generator</h1>
+<form id="vcfForm">
+  <input type="text" name="fn" placeholder="Full Name" required><br>
+  <input type="text" name="tel" placeholder="Phone"><br>
+  <input type="email" name="email" placeholder="Email"><br>
+  <input type="text" name="org" placeholder="Organization"><br>
+  <button type="submit">Download VCF</button>
+</form>
+
+<script>
+document.getElementById('vcfForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const data = Object.fromEntries(new FormData(e.target).entries());
+  const escapeVal = s => (s||"").replace(/\\/g,"\\\\").replace(/;/g,"\\;").replace(/,/g,"\\,").replace(/\n/g,"\\n");
+  const vcf = [
+    "BEGIN:VCARD",
+    "VERSION:3.0",
+    `FN:${escapeVal(data.fn)}`,
+    data.tel ? `TEL;TYPE=CELL:${escapeVal(data.tel)}` : "",
+    data.email ? `EMAIL;TYPE=INTERNET:${escapeVal(data.email)}` : "",
+    data.org ? `ORG:${escapeVal(data.org)}` : "",
+    "END:VCARD"
+  ].filter(Boolean).join("\r\n") + "\r\n";
+
+  const blob = new Blob([vcf], {type:"text/vcard"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = (data.fn || 'contact') + '.vcf';
+  a.click();
+  URL.revokeObjectURL(url);
+});
+</script>
+</body>
+</html>
