@@ -41,7 +41,6 @@
     .small{font-size:13px;opacity:0.9}
     #progressBar{height:14px;border-radius:999px;background:transparent;border:1px solid rgba(0,255,0,0.08);overflow:hidden;margin-top:8px}
     #progressFill{height:100%;width:0%;background:linear-gradient(90deg,#00ff00,#88ff88)}
-    .adminOnly{display:none;margin-top:12px}
     .flex-between{display:flex;justify-content:space-between;align-items:center}
     .muted{color:rgba(0,255,0,0.6);font-size:13px}
     footer{margin-top:12px;text-align:center;font-size:12px;color:rgba(0,255,0,0.6)}
@@ -76,28 +75,22 @@
       <div id="progressBar"><div id="progressFill"></div></div>
     </div>
 
-    <!-- Admin controls -->
-    <div id="adminPanel" class="adminOnly">
-      <hr style="border:none;border-top:1px solid rgba(0,255,0,0.06);margin:12px 0" />
-      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-        <div style="flex:1;min-width:220px">
-          <input id="adminEmail" type="email" placeholder="Admin email" />
-        </div>
-        <div style="flex:1;min-width:220px">
-          <input id="adminPassword" type="password" placeholder="Password" />
-        </div>
-        <div style="display:flex;gap:6px;flex-shrink:0">
-          <button id="loginBtn">Login</button>
-          <button id="logoutBtn" style="display:none">Logout</button>
-        </div>
-      </div>
+    <!-- Admin Login Section (VISIBLE) -->
+    <div id="adminLoginSection" style="margin-top:12px; text-align:center;">
+      <input id="adminEmail" type="email" placeholder="Admin email" style="width:45%;padding:10px;margin:5px;">
+      <input id="adminPassword" type="password" placeholder="Password" style="width:45%;padding:10px;margin:5px;">
+      <button id="adminLoginBtn" style="padding:10px 15px;margin-left:5px;">Login</button>
+      <p id="adminLoginStatus" class="muted small"></p>
+    </div>
 
+    <!-- Admin Panel (hidden until login) -->
+    <div id="adminPanel" style="display:none; margin-top:12px; text-align:center;">
       <div style="margin-top:10px;display:flex;gap:8px;align-items:center">
         <input id="targetInput" type="number" placeholder="Set new target" min="1" />
         <button id="setTargetBtn">Set Target</button>
         <button id="resetBtn" style="background:#440000;color:var(--green)">Reset Data</button>
+        <button id="logoutBtn" style="background:black;color:white;padding:10px 15px;">Logout</button>
       </div>
-
       <div style="margin-top:8px" class="muted small" id="adminMsg"></div>
     </div>
 
@@ -106,16 +99,10 @@
 
   <!-- Firebase + app -->
   <script type="module">
-    // imports
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-    import {
-      getDatabase, ref, set, push, onValue, get, child, remove
-    } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
-    import {
-      getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged
-    } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+    import { getDatabase, ref, set, push, onValue, get, child, remove, query, orderByChild, equalTo } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+    import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
-    // your firebase config (already provided)
     const firebaseConfig = {
       apiKey: "AIzaSyDnVw3m6tVSZFllGvI8M0KnvOelyfCNmyU",
       authDomain: "rummitechvcf.firebaseapp.com",
@@ -126,12 +113,10 @@
       measurementId: "G-ZQP9152Z5R"
     };
 
-    // init
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
     const auth = getAuth(app);
 
-    // DOM
     const form = document.getElementById("vcfForm");
     const nameInput = document.getElementById("name");
     const phoneInput = document.getElementById("phone");
@@ -145,219 +130,162 @@
     const targetEl = document.getElementById("targetCount");
     const progressFill = document.getElementById("progressFill");
 
+    const adminLoginSection = document.getElementById("adminLoginSection");
+    const adminLoginBtn = document.getElementById("adminLoginBtn");
+    const adminLoginStatus = document.getElementById("adminLoginStatus");
     const adminPanel = document.getElementById("adminPanel");
     const adminEmail = document.getElementById("adminEmail");
     const adminPassword = document.getElementById("adminPassword");
-    const loginBtn = document.getElementById("loginBtn");
     const logoutBtn = document.getElementById("logoutBtn");
     const resetBtn = document.getElementById("resetBtn");
     const setTargetBtn = document.getElementById("setTargetBtn");
     const targetInput = document.getElementById("targetInput");
     const adminMsg = document.getElementById("adminMsg");
 
-    // refs
     const registrationsRef = ref(db, "registrations");
     const targetRef = ref(db, "target");
-    const usersRef = ref(db, "users");
 
-    // globals
-    let targetCount = 100; // fallback
+    let targetCount = 100;
 
-    // helper: escape VCF values
     function escapeV(v){
       return String(v).replace(/\\/g,"\\\\").replace(/\n/g,"\\n").replace(/,/g,"\\,").replace(/;/g,"\\;");
     }
 
-    // --- load target in real-time ---
+    // Load target
     onValue(targetRef, (snap) => {
-      if (snap.exists()) {
-        targetCount = Number(snap.val());
-      }
+      if (snap.exists()) targetCount = Number(snap.val());
       targetEl.textContent = targetCount;
-      // recalc counts (registrations listener also handles recalc)
       updateCountsOnce();
     });
 
-    // --- registrations listener (real-time) ---
-    onValue(registrationsRef, (snap) => {
-      const count = snap.exists() ? Object.keys(snap.val()).length : 0;
-      registeredEl.textContent = count;
-      remainingEl.textContent = Math.max(targetCount - count, 0);
-      const pct = targetCount > 0 ? Math.min(Math.round((count / targetCount) * 100), 100) : 0;
-      progressEl.textContent = pct + "%";
-      progressFill.style.width = pct + "%";
-
-      if (count >= targetCount && targetCount > 0) {
-        downloadBtn.style.display = "inline-block";
-        downloadMessage.textContent = "";
-      } else {
-        downloadBtn.style.display = "none";
-        downloadMessage.textContent = `VCF will be available after ${targetCount} registrations are reached`;
-      }
-    });
-
-    // helper to compute counts once
     async function updateCountsOnce(){
-      try {
+      try{
         const snap = await get(registrationsRef);
         const count = snap.exists() ? Object.keys(snap.val()).length : 0;
         registeredEl.textContent = count;
         remainingEl.textContent = Math.max(targetCount - count, 0);
-        const pct = targetCount > 0 ? Math.min(Math.round((count / targetCount) * 100), 100) : 0;
-        progressEl.textContent = pct + "%";
-        progressFill.style.width = pct + "%";
-      } catch(e){ /* ignore */ }
+        const pct = targetCount > 0 ? Math.min(Math.round((count / targetCount) * 100),100):0;
+        progressEl.textContent = pct+"%";
+        progressFill.style.width = pct+"%";
+      }catch(e){}
     }
 
-    // --- prevent duplicate registration & submit ---
-    form.addEventListener("submit", async (e) => {
+    // Registrations
+    form.addEventListener("submit", async (e)=>{
       e.preventDefault();
-      const name = (nameInput.value || "").trim();
-      let phone = (phoneInput.value || "").trim();
-      phone = phone.replace(/\s+/g, "");
+      const name = (nameInput.value||"").trim();
+      let phone = (phoneInput.value||"").trim().replace(/\s+/g,"");
 
-      if (!name) { alert("Please enter full name"); return; }
-      if (!phone || !phone.startsWith("+") || phone.length < 8) { alert("Enter phone with country code, e.g. +254712345678"); return; }
+      if(!name){ alert("Enter full name"); return; }
+      if(!phone || !phone.startsWith("+") || phone.length<8){ alert("Phone with country code required, e.g. +254712345678"); return; }
 
-      try {
+      try{
         const snap = await get(registrationsRef);
-        if (snap.exists()) {
+        if(snap.exists()){
           const data = snap.val();
-          const exists = Object.values(data).some(r => (r.tel || r.phone || r.phoneNumber || r.phone) === phone);
-          if (exists) {
-            alert("This phone number is already registered.");
-            return;
-          }
+          const exists = Object.values(data).some(r=>r.tel===phone);
+          if(exists){ alert("This number is already registered."); return; }
         }
-
-        // push new registration
-        await push(registrationsRef, { fn: name, tel: phone, timestamp: new Date().toISOString() });
-        nameInput.value = "";
-        phoneInput.value = "";
-        downloadMessage.textContent = "Registration successful — thank you.";
-        setTimeout(()=>{ if(downloadMessage.textContent === "Registration successful — thank you.") downloadMessage.textContent = ""; }, 3000);
-      } catch(err) {
-        alert("Failed to register: " + err.message);
+        await push(registrationsRef, { fn:name, tel:phone, timestamp:new Date().toISOString() });
+        nameInput.value=""; phoneInput.value="";
+        downloadMessage.textContent="Registration successful — thank you.";
+        setTimeout(()=>{ if(downloadMessage.textContent==="Registration successful — thank you.") downloadMessage.textContent=""; },3000);
+      }catch(err){
+        alert("Failed to register: "+err.message);
       }
     });
 
-    // -----------------------------
-    // ADMIN: Email/password login
-    // -----------------------------
-    loginBtn.addEventListener("click", async () => {
-      const email = (adminEmail.value || "").trim();
-      const pw = (adminPassword.value || "").trim();
-      if (!email || !pw) { alert("Enter admin email and password"); return; }
-      try {
-        await signInWithEmailAndPassword(auth, email, pw);
-        // onAuthStateChanged will update UI
-      } catch(err) {
-        alert("Login failed: " + err.message);
+    // ADMIN LOGIN
+    adminLoginBtn.addEventListener("click", async ()=>{
+      const email = adminEmail.value.trim();
+      const pw = adminPassword.value.trim();
+      if(!email || !pw){ adminLoginStatus.textContent="Enter email and password"; return; }
+      try{
+        await signInWithEmailAndPassword(auth,email,pw);
+        adminLoginStatus.textContent="Logging in...";
+      }catch(err){
+        adminLoginStatus.textContent="Login failed: "+err.message;
       }
     });
 
-    logoutBtn.addEventListener("click", async () => {
-      try {
-        await signOut(auth);
-        adminMsg.textContent = "";
-      } catch(err) {
-        alert("Logout failed: " + err.message);
-      }
-    });
+    logoutBtn.addEventListener("click", async ()=>{ await signOut(auth); });
 
-    // watch auth state and show admin controls only to admin users
-    onAuthStateChanged(auth, async (user) => {
-      if (!user) {
-        adminPanel.style.display = "none";
-        logoutBtn.style.display = "none";
-        loginBtn.style.display = "inline-block";
-        return;
-      }
-
-      // check if user has role: "admin" at /users/<uid>/role
-      try {
-        const uSnap = await get(child(ref(db), `users/${user.uid}`));
-        if (uSnap.exists() && uSnap.val().role === "admin") {
-          adminPanel.style.display = "block";
-          loginBtn.style.display = "none";
-          logoutBtn.style.display = "inline-block";
-          adminMsg.textContent = `Admin: ${user.email} (uid: ${user.uid})`;
-        } else {
-          // logged in but not admin
-          adminPanel.style.display = "none";
-          loginBtn.style.display = "inline-block";
-          logoutBtn.style.display = "inline-block";
-          adminMsg.textContent = "Logged in (not admin)";
+    onAuthStateChanged(auth, async (user)=>{
+      if(user){
+        const uSnap = await get(child(ref(db),`users/${user.uid}`));
+        if(uSnap.exists() && uSnap.val().role==="admin"){
+          adminPanel.style.display="block";
+          adminLoginSection.style.display="none";
+          adminMsg.textContent=`Admin: ${user.email}`;
+        }else{
+          adminPanel.style.display="none";
+          adminLoginSection.style.display="block";
+          adminLoginStatus.textContent="Not an admin";
         }
-      } catch(err) {
-        adminPanel.style.display = "none";
-        adminMsg.textContent = "Error reading role: " + err.message;
+      }else{
+        adminPanel.style.display="none";
+        adminLoginSection.style.display="block";
+        adminLoginStatus.textContent="";
       }
     });
 
-    // -----------------------------
-    // ADMIN: Set target (writes to /target)
-    // -----------------------------
-    setTargetBtn.addEventListener("click", async () => {
+    // Set target
+    setTargetBtn.addEventListener("click", async ()=>{
       const v = Number(targetInput.value);
-      if (!v || v <= 0) { alert("Enter a valid number"); return; }
-      try {
-        await set(targetRef, v);
-        adminMsg.textContent = `Target set to ${v}`;
-      } catch(err) {
-        alert("Failed to set target: " + err.message);
-      }
+      if(!v || v<=0){ alert("Enter valid number"); return; }
+      try{
+        await set(targetRef,v);
+        adminMsg.textContent=`Target set to ${v}`;
+      }catch(err){ alert("Failed: "+err.message); }
     });
 
-    // -----------------------------
-    // ADMIN: Reset registrations
-    // -----------------------------
-    resetBtn.addEventListener("click", async () => {
-      if (!confirm("Reset all registrations? This cannot be undone.")) return;
-      try {
-        await remove(registrationsRef);
-        adminMsg.textContent = "Registrations cleared";
-      } catch(err) {
-        alert("Failed to clear: " + err.message);
-      }
+    // Reset registrations
+    resetBtn.addEventListener("click", async ()=>{
+      if(!confirm("Reset all registrations?")) return;
+      try{ await remove(registrationsRef); adminMsg.textContent="Registrations cleared"; }catch(err){ alert("Failed: "+err.message); }
     });
 
-    // -----------------------------
-    // DOWNLOAD: Bulk VCF generation (Option 2)
-    // -----------------------------
-    downloadBtn.addEventListener("click", async () => {
-      try {
+    // Download VCF
+    downloadBtn.addEventListener("click", async ()=>{
+      try{
         const snap = await get(registrationsRef);
-        if (!snap.exists()) { alert("No registrations"); return; }
+        if(!snap.exists()){ alert("No registrations"); return; }
         const data = snap.val();
-        const lines = [];
-        for (const id of Object.keys(data)) {
+        const lines=[];
+        for(const id of Object.keys(data)){
           const r = data[id];
-          const name = r.fn || r.name || "No Name";
-          const tel = r.tel || r.phone || "";
           lines.push("BEGIN:VCARD");
           lines.push("VERSION:3.0");
-          lines.push(`FN:${escapeV(name)}`);
-          if (tel) lines.push(`TEL:${escapeV(tel)}`);
+          lines.push(`FN:${escapeV(r.fn||"No Name")}`);
+          if(r.tel) lines.push(`TEL:${escapeV(r.tel)}`);
           lines.push("END:VCARD");
         }
-        const vcf = lines.join("\r\n") + "\r\n";
-        const now = new Date().toISOString().replace(/[:.]/g,"-").replace("T","_").slice(0,19);
-        const filename = `registrations_${now}.vcf`;
-        const blob = new Blob([vcf], { type: "text/vcard;charset=utf-8" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url; a.download = filename; document.body.appendChild(a); a.click();
-        document.body.removeChild(a); URL.revokeObjectURL(url);
-      } catch(err) {
-        alert("Failed to build VCF: " + err.message);
-      }
+        const vcf=lines.join("\r\n")+"\r\n";
+        const now=new Date().toISOString().replace(/[:.]/g,"-").replace("T","_").slice(0,19);
+        const filename=`registrations_${now}.vcf`;
+        const blob=new Blob([vcf],{type:"text/vcard;charset=utf-8"});
+        const url=URL.createObjectURL(blob);
+        const a=document.createElement("a"); a.href=url; a.download=filename; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+      }catch(err){ alert("Failed to build VCF: "+err.message); }
     });
 
-    // initial UI
-    adminPanel.style.display = "none";
-    downloadBtn.style.display = "none";
-    downloadMessage.textContent = `VCF will be available after ${targetCount} registrations are reached`;
+    // Real-time update
+    onValue(registrationsRef, (snap)=>{
+      const count = snap.exists()?Object.keys(snap.val()).length:0;
+      registeredEl.textContent=count;
+      remainingEl.textContent=Math.max(targetCount-count,0);
+      const pct=targetCount>0?Math.min(Math.round((count/targetCount)*100),100):0;
+      progressEl.textContent=pct+"%";
+      progressFill.style.width=pct+"%";
+
+      if(count>=targetCount && targetCount>0){
+        downloadBtn.style.display="inline-block";
+        downloadMessage.textContent="";
+      }else{
+        downloadBtn.style.display="none";
+        downloadMessage.textContent=`VCF will be available after ${targetCount} registrations are reached`;
+      }
+    });
 
   </script>
 </body>
