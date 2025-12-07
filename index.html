@@ -1,182 +1,240 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Rummitech VCF Generator</title>
-<style>
-  body {
-    margin: 0;
-    font-family: 'Courier New', monospace;
-    background-color: #000;
-    color: #00FF00;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-    padding: 20px;
-  }
-
-  h1 {
-    font-size: 2rem;
-    margin-bottom: 20px;
-  }
-
-  form {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-    width: 100%;
-    max-width: 400px;
-    background-color: rgba(0,0,0,0.6);
-    padding: 20px;
-    border: 1px solid #0F0;
-    border-radius: 10px;
-  }
-
-  input, button {
-    padding: 10px;
-    border: 1px solid #0F0;
-    border-radius: 5px;
-    background-color: #000;
-    color: #0F0;
-    font-family: monospace;
-    font-size: 1rem;
-  }
-
-  button {
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-
-  button:hover {
-    background-color: #0F0;
-    color: #000;
-    font-weight: bold;
-  }
-
-  #tracker {
-    margin-top: 20px;
-    text-align: center;
-  }
-
-  #progressBar {
-    width: 100%;
-    max-width: 400px;
-    height: 20px;
-    border: 1px solid #0F0;
-    border-radius: 10px;
-    overflow: hidden;
-    margin-top: 10px;
-  }
-
-  #progressFill {
-    height: 100%;
-    background-color: #0F0;
-    width: 0%;
-    transition: width 0.5s;
-  }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VCF Generator - RUMMI TECH</title>
+  <style>
+    body {
+      background-color: black;
+      color: lime;
+      font-family: monospace;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+    input, button {
+      padding: 10px;
+      margin: 5px;
+      font-size: 16px;
+    }
+    button {
+      cursor: pointer;
+    }
+    #tracker {
+      margin-top: 20px;
+    }
+    #downloadBtn {
+      margin-top: 10px;
+    }
+  </style>
 </head>
 <body>
 
-<h1>Rummitech VCF Generator</h1>
+  <h1>VCF Generator</h1>
 
-<form id="vcfForm">
-  <input type="text" name="fn" placeholder="Full Name" required>
-  <input type="text" name="tel" placeholder="Phone Number">
-  <button type="submit">Submit / Download</button>
-</form>
+  <!-- Registration Form -->
+  <form id="vcfForm">
+    <input type="text" id="name" placeholder="Your Name" required>
+    <input type="tel" id="phone" placeholder="+254 745612717" required>
+    <button type="submit">Submit</button>
+  </form>
 
-<div id="tracker">
-  <div>Target Required: <span id="target">100</span></div>
-  <div>Registered: <span id="registered">0</span></div>
-  <div>Remaining: <span id="remaining">100</span></div>
-  <div>Progress: <span id="percentage">0%</span></div>
-  <div id="progressBar"><div id="progressFill"></div></div>
-</div>
+  <!-- Admin Controls -->
+  <button id="loginBtn">Admin Login</button>
+  <button id="resetBtn" style="display:none;">Reset Data</button>
 
-<!-- Firebase SDK -->
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-import { getDatabase, ref, push, get } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+  <!-- Admin Target Setting -->
+  <div id="adminTargetDiv" style="display:none; margin-top:10px;">
+    <input type="number" id="targetInput" placeholder="Set target">
+    <button id="setTargetBtn">Set Target</button>
+  </div>
 
-// ------------------ YOUR FIREBASE CONFIG ------------------
-const firebaseConfig = {
-  apiKey: "AIzaSyDnVw3m6tVSZFllGvI8M0KnvOelyfCNmyU",
-  authDomain: "rummitechvcf.firebaseapp.com",
-  databaseURL: "https://rummitechvcf-default-rtdb.firebaseio.com",
-  projectId: "rummitechvcf",
-  storageBucket: "rummitechvcf.appspot.com",
-  messagingSenderId: "478685720198",
-  appId: "1:478685720198:web:8f3447fe8fdf535e7c6b07",
-  measurementId: "G-ZQP9152Z5R"
-};
-// ----------------------------------------------------------
+  <!-- Tracker -->
+  <div id="tracker">
+    <p>Target: <span id="targetCount">100</span></p>
+    <p>Registered: <span id="registeredCount">0</span></p>
+    <p>Remaining: <span id="remainingCount">0</span></p>
+    <p>Progress: <span id="progressPercent">0%</span></p>
+  </div>
 
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
-const TARGET = 100;
+  <!-- VCF Download -->
+  <button id="downloadBtn" style="display:none;">Download VCF</button>
+  <p id="downloadMessage" style="color:red;"></p>
 
-// Get total registrations
-async function getTotalRegistrations() {
-  const snapshot = await get(ref(db, 'registrations'));
-  return snapshot.exists() ? Object.keys(snapshot.val()).length : 0;
-}
+  <!-- Firebase SDKs -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+    import { getDatabase, ref, push, get, child, remove, onValue } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+    import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
-// Add new registration
-async function addRegistration(data) {
-  await push(ref(db, 'registrations'), data);
-}
+    // ===== Firebase Config =====
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "rummitechvcf.firebaseapp.com",
+      databaseURL: "https://rummitechvcf-default-rtdb.firebaseio.com",
+      projectId: "rummitechvcf",
+      storageBucket: "rummitechvcf.appspot.com",
+      messagingSenderId: "YOUR_SENDER_ID",
+      appId: "YOUR_APP_ID",
+      measurementId: "YOUR_MEASUREMENT_ID"
+    };
 
-// Update tracker UI
-async function updateTracker() {
-  const total = await getTotalRegistrations();
-  document.getElementById('target').textContent = TARGET;
-  document.getElementById('registered').textContent = total;
-  document.getElementById('remaining').textContent = Math.max(TARGET - total, 0);
-  const percentage = Math.min(Math.round((total / TARGET) * 100), 100);
-  document.getElementById('percentage').textContent = percentage + "%";
-  document.getElementById('progressFill').style.width = percentage + "%";
-}
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const auth = getAuth(app);
 
-// Initial tracker update and auto-refresh
-updateTracker();
-setInterval(updateTracker, 5000);
+    // ===== Elements =====
+    const loginBtn = document.getElementById("loginBtn");
+    const resetBtn = document.getElementById("resetBtn");
+    const adminTargetDiv = document.getElementById("adminTargetDiv");
+    const targetInput = document.getElementById("targetInput");
+    const setTargetBtn = document.getElementById("setTargetBtn");
+    const form = document.getElementById("vcfForm");
+    const registeredEl = document.getElementById("registeredCount");
+    const remainingEl = document.getElementById("remainingCount");
+    const progressEl = document.getElementById("progressPercent");
+    const targetEl = document.getElementById("targetCount");
+    const downloadBtn = document.getElementById("downloadBtn");
+    const downloadMessage = document.getElementById("downloadMessage");
 
-// Form submit
-document.getElementById('vcfForm').addEventListener('submit', async e => {
-  e.preventDefault();
-  const data = Object.fromEntries(new FormData(e.target).entries());
-  const total = await getTotalRegistrations();
+    let targetCount = 100; // default
 
-  if(total >= TARGET){
-    // Target reached → generate VCF
-    const vcf = `
-BEGIN:VCARD
+    // ===== Admin Login =====
+    loginBtn.addEventListener("click", () => {
+      const email = prompt("Enter admin email:");
+      const password = prompt("Enter password:");
+      signInWithEmailAndPassword(auth, email, password)
+        .then(() => alert("Logged in as Admin"))
+        .catch(err => alert("Login Failed: " + err.message));
+    });
+
+    // ===== Check Admin Role =====
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        const snap = await get(child(ref(db), "users/" + user.uid));
+        if (snap.exists() && snap.val().role === "admin") {
+          resetBtn.style.display = "block";
+          adminTargetDiv.style.display = "block";
+
+          // Load current target from Firebase
+          const targetSnap = await get(ref(db, "target"));
+          if (targetSnap.exists()) {
+            targetCount = targetSnap.val();
+            targetEl.textContent = targetCount;
+          }
+        }
+      }
+    });
+
+    // ===== Set Target =====
+    setTargetBtn.addEventListener("click", async () => {
+      const newTarget = parseInt(targetInput.value);
+      if (isNaN(newTarget) || newTarget <= 0) {
+        alert("Enter a valid number");
+        return;
+      }
+      try {
+        await ref(db, "target").set(newTarget);
+        targetCount = newTarget;
+        targetEl.textContent = targetCount;
+        alert("Target updated to " + targetCount);
+      } catch(err) {
+        alert("Error updating target: " + err.message);
+      }
+    });
+
+    // ===== Reset Data =====
+    resetBtn.addEventListener("click", async () => {
+      if (!confirm("Are you sure? This will delete all registered users.")) return;
+      try {
+        await remove(ref(db, "registrations"));
+        alert("Data reset successfully!");
+      } catch(err) {
+        alert("Error resetting data: " + err.message);
+      }
+    });
+
+    // ===== Form Submission =====
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const name = document.getElementById("name").value.trim();
+      let phone = document.getElementById("phone").value.trim();
+      phone = phone.replace(/\s+/g, "");
+
+      if (!phone.startsWith("+") || phone.length < 8) {
+        alert("Please enter a valid phone number with country code, e.g., +254745612717");
+        return;
+      }
+
+      const timestamp = new Date().toISOString();
+
+      if (!name || !phone) {
+        alert("Please fill in all fields");
+        return;
+      }
+
+      try {
+        await push(ref(db, "registrations"), { fn: name, tel: phone, timestamp });
+        alert("Registration successful!");
+      } catch(err) {
+        alert("Error saving registration: " + err.message);
+      }
+
+      form.reset();
+    });
+
+    // ===== Tracker & Conditional Download =====
+    const registrationsRef = ref(db, "registrations");
+
+    onValue(registrationsRef, (snapshot) => {
+      const count = snapshot.exists() ? Object.keys(snapshot.val()).length : 0;
+      registeredEl.textContent = count;
+      remainingEl.textContent = Math.max(targetCount - count, 0);
+      progressEl.textContent = Math.min(((count / targetCount) * 100).toFixed(0), 100) + "%";
+
+      if (count >= targetCount) {
+        downloadBtn.style.display = "inline-block";
+        downloadMessage.textContent = "";
+      } else {
+        downloadBtn.style.display = "none";
+        downloadMessage.textContent = `VCF will be available after ${targetCount} registrations are reached`;
+      }
+    });
+
+    // ===== Dynamic VCF Generation =====
+    downloadBtn.addEventListener("click", async () => {
+      const name = document.getElementById("name").value.trim();
+      let phone = document.getElementById("phone").value.trim();
+      phone = phone.replace(/\s+/g, "");
+
+      if (!name || !phone || !phone.startsWith("+")) {
+        alert("Invalid name or phone number.");
+        return;
+      }
+
+      const vcfContent = 
+`BEGIN:VCARD
 VERSION:3.0
-FN:${data.fn}
-${data.tel ? `TEL;TYPE=CELL:${data.tel}` : ""}
-END:VCARD`.trim();
+FN:${name}
+TEL:${phone}
+END:VCARD`;
 
-    const blob = new Blob([vcf], {type:"text/vcard"});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = (data.fn || 'contact') + '.vcf';
-    a.click();
-    URL.revokeObjectURL(url);
-    alert("VCF Downloaded!");
+      const blob = new Blob([vcfContent], { type: 'text/vcard' });
+      const url = URL.createObjectURL(blob);
 
-  } else {
-    // Register user
-    await addRegistration({...data, timestamp: new Date().toISOString()});
-    alert("Registration recorded! Download available once target is reached.");
-  }
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${name.replace(/\s+/g, "_")}.vcf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    });
 
-  updateTracker();
-});
-</script>
+  </script>
+
 </body>
-</html>
+  </html>
