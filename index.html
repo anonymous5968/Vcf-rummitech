@@ -43,6 +43,8 @@
     #progressFill{height:100%;width:0%;background:linear-gradient(90deg,#00ff00,#88ff88)}
     .flex-between{display:flex;justify-content:space-between;align-items:center}
     .muted{color:rgba(0,255,0,0.6);font-size:13px}
+    .whatsapp-links{margin-top:12px;text-align:center;display:none;}
+    .whatsapp-links a{display:block;margin:4px 0;color:var(--green);text-decoration:none;font-weight:700;}
     footer{margin-top:12px;text-align:center;font-size:12px;color:rgba(0,255,0,0.6)}
     @media(max-width:560px){.card{padding:12px}}
   </style>
@@ -94,13 +96,20 @@
       <div style="margin-top:8px" class="muted small" id="adminMsg"></div>
     </div>
 
+    <!-- WhatsApp Group & Channel Links -->
+    <div class="whatsapp-links" id="whatsappLinks">
+      <p class="small">Thank you for registering! Join our WhatsApp Group & Channel:</p>
+      <a href="https://chat.whatsapp.com/JUkz9U1unTrGt5WgJlPMjT" target="_blank">Join WhatsApp Group</a>
+      <a href="https://whatsapp.com/channel/0029VbB6mU14dTnPVhEaBS1C" target="_blank">Join WhatsApp Channel</a>
+    </div>
+
     <footer>© RUMMI TECH</footer>
   </div>
 
   <!-- Firebase + app -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-    import { getDatabase, ref, set, push, onValue, get, child, remove, query, orderByChild, equalTo } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+    import { getDatabase, ref, set, push, onValue, get, child, remove } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
     import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
     const firebaseConfig = {
@@ -142,6 +151,8 @@
     const targetInput = document.getElementById("targetInput");
     const adminMsg = document.getElementById("adminMsg");
 
+    const whatsappLinks = document.getElementById("whatsappLinks");
+
     const registrationsRef = ref(db, "registrations");
     const targetRef = ref(db, "target");
 
@@ -170,7 +181,7 @@
       }catch(e){}
     }
 
-    // Registrations
+    // Registration form submit
     form.addEventListener("submit", async (e)=>{
       e.preventDefault();
       const name = (nameInput.value||"").trim();
@@ -189,13 +200,17 @@
         await push(registrationsRef, { fn:name, tel:phone, timestamp:new Date().toISOString() });
         nameInput.value=""; phoneInput.value="";
         downloadMessage.textContent="Registration successful — thank you.";
+
+        // Show WhatsApp links after registration
+        whatsappLinks.style.display = "block";
+
         setTimeout(()=>{ if(downloadMessage.textContent==="Registration successful — thank you.") downloadMessage.textContent=""; },3000);
       }catch(err){
         alert("Failed to register: "+err.message);
       }
     });
 
-    // ADMIN LOGIN
+    // Admin login
     adminLoginBtn.addEventListener("click", async ()=>{
       const email = adminEmail.value.trim();
       const pw = adminPassword.value.trim();
@@ -242,7 +257,7 @@
     // Reset registrations
     resetBtn.addEventListener("click", async ()=>{
       if(!confirm("Reset all registrations?")) return;
-      try{ await remove(registrationsRef); adminMsg.textContent="Registrations cleared"; }catch(err){ alert("Failed: "+err.message); }
+      try{ await remove(registrationsRef); adminMsg.textContent="Registrations cleared"; whatsappLinks.style.display="none"; }catch(err){ alert("Failed: "+err.message); }
     });
 
     // Download VCF
@@ -289,4 +304,4 @@
 
   </script>
 </body>
-  </html>
+</html>
