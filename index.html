@@ -322,30 +322,33 @@
     });
 
     // Download VCF
+    // Download VCF (Hardcoded Name with Date Only)
     downloadBtn.addEventListener("click", async ()=>{
       try{
         const snap = await get(registrationsRef);
         if(!snap.exists()){ alert("No registrations"); return; }
+        
+        // Format the date (YYYY-MM-DD)
+        const dateOnly = new Date().toISOString().split('T')[0];
+        const finalName = `rummitech vcf ${dateOnly}.vcf`;
+
         const data = snap.val();
         const lines=[];
         for(const id of Object.keys(data)){
           const r = data[id];
           lines.push("BEGIN:VCARD");
           lines.push("VERSION:3.0");
-          // Appends the configured emoji right after the name
+          // This line appends the emoji to the name
           lines.push(`FN:${escapeV(r.fn||"No Name")}${vcfEmoji}`);
           if(r.tel) lines.push(`TEL:${escapeV(r.tel)}`);
           lines.push("END:VCARD");
         }
         const vcf=lines.join("\r\n")+"\r\n";
-        const now=new Date().toISOString().replace(/[:.]/g,"-").replace("T","_").slice(0,19);
-        const filename=`registrations_${now}.vcf`;
         const blob=new Blob([vcf],{type:"text/vcard;charset=utf-8"});
         const url=URL.createObjectURL(blob);
-        const a=document.createElement("a"); a.href=url; a.download=filename; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+        const a=document.createElement("a"); a.href=url; a.download=finalName; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
       }catch(err){ alert("Failed to build VCF: "+err.message); }
     });
-
     // Real-time update (handles progress bar and admin table)
     onValue(registrationsRef, (snap)=>{
       let count = 0;
