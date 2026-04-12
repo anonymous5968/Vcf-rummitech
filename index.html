@@ -45,6 +45,13 @@
     .muted{color:rgba(0,255,0,0.6);font-size:13px}
     .whatsapp-links{margin-top:12px;text-align:center;display:none;}
     .whatsapp-links a{display:block;margin:4px 0;color:var(--green);text-decoration:none;font-weight:700;}
+    
+    /* --- NEW ADMIN TABLE STYLES --- */
+    .table-container { max-height: 250px; overflow-y: auto; margin-top: 15px; border: 1px solid rgba(0,255,0,0.2); border-radius: 6px; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { border-bottom: 1px solid rgba(0,255,0,0.15); padding: 8px; text-align: left; }
+    th { background: rgba(0,255,0,0.1); position: sticky; top: 0; }
+    
     footer{margin-top:12px;text-align:center;font-size:12px;color:rgba(0,255,0,0.6)}
     @media(max-width:560px){.card{padding:12px}}
   </style>
@@ -53,7 +60,6 @@
   <div class="card" role="main">
     <h1>RUMMI TECH — VCF Generator</h1>
 
-    <!-- Registration form -->
     <form id="vcfForm" autocomplete="off" novalidate>
       <input id="name" type="text" placeholder="Full name" required />
       <input id="phone" type="tel" placeholder="+254712345678" required />
@@ -64,7 +70,6 @@
       <div id="downloadMessage" class="small muted"></div>
     </form>
 
-    <!-- Tracker -->
     <div class="tracker">
       <div class="flex-between">
         <div>Target: <strong id="targetCount">0</strong></div>
@@ -77,7 +82,6 @@
       <div id="progressBar"><div id="progressFill"></div></div>
     </div>
 
-    <!-- Admin Login Section (VISIBLE) -->
     <div id="adminLoginSection" style="margin-top:12px; text-align:center;">
       <input id="adminEmail" type="email" placeholder="Admin email" style="width:45%;padding:10px;margin:5px;">
       <input id="adminPassword" type="password" placeholder="Password" style="width:45%;padding:10px;margin:5px;">
@@ -85,18 +89,27 @@
       <p id="adminLoginStatus" class="muted small"></p>
     </div>
 
-    <!-- Admin Panel (hidden until login) -->
-    <div id="adminPanel" style="display:none; margin-top:12px; text-align:center;">
-      <div style="margin-top:10px;display:flex;gap:8px;align-items:center">
-        <input id="targetInput" type="number" placeholder="Set new target" min="1" />
+    <div id="adminPanel" style="display:none; margin-top:12px;">
+      <div style="display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap;">
+        <input id="targetInput" type="number" placeholder="Set new target" min="1" style="max-width: 120px;" />
         <button id="setTargetBtn">Set Target</button>
+        <button id="exportCsvBtn" style="background:#003300;color:var(--green)">Export CSV</button>
         <button id="resetBtn" style="background:#440000;color:var(--green)">Reset Data</button>
-        <button id="logoutBtn" style="background:black;color:white;padding:10px 15px;">Logout</button>
+        <button id="logoutBtn" style="background:transparent;color:var(--green);border:none;text-decoration:underline;">Logout</button>
       </div>
-      <div style="margin-top:8px" class="muted small" id="adminMsg"></div>
+      <div style="margin-top:8px; text-align:center;" class="muted small" id="adminMsg"></div>
+
+      <div class="table-container">
+        <table id="dataTable">
+          <thead>
+            <tr><th>Name</th><th>Phone</th><th>Time</th></tr>
+          </thead>
+          <tbody id="dataTableBody">
+            </tbody>
+        </table>
+      </div>
     </div>
 
-    <!-- WhatsApp Group & Channel Links -->
     <div class="whatsapp-links" id="whatsappLinks">
       <p class="small">Thank you for registering! Join our WhatsApp Group & Channel:</p>
       <a href="https://chat.whatsapp.com/JUkz9U1unTrGt5WgJlPMjT" target="_blank">Join WhatsApp Group</a>
@@ -106,7 +119,6 @@
     <footer>© RUMMI TECH</footer>
   </div>
 
-  <!-- Firebase + app -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
     import { getDatabase, ref, set, push, onValue, get, child, remove } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
@@ -125,6 +137,11 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
     const auth = getAuth(app);
+
+    // --- CONFIG ---
+    // Change this to whatever emoji you want attached to the saved names!
+    const vcfEmoji = " 🟢"; 
+    // --------------
 
     const form = document.getElementById("vcfForm");
     const nameInput = document.getElementById("name");
@@ -148,8 +165,10 @@
     const logoutBtn = document.getElementById("logoutBtn");
     const resetBtn = document.getElementById("resetBtn");
     const setTargetBtn = document.getElementById("setTargetBtn");
+    const exportCsvBtn = document.getElementById("exportCsvBtn");
     const targetInput = document.getElementById("targetInput");
     const adminMsg = document.getElementById("adminMsg");
+    const dataTableBody = document.getElementById("dataTableBody");
 
     const whatsappLinks = document.getElementById("whatsappLinks");
 
@@ -158,8 +177,16 @@
 
     let targetCount = 100;
 
+    // Helper to escape VCF syntax
     function escapeV(v){
       return String(v).replace(/\\/g,"\\\\").replace(/\n/g,"\\n").replace(/,/g,"\\,").replace(/;/g,"\\;");
+    }
+
+    // Helper to escape HTML for the data table
+    function escapeHTML(str) {
+      return String(str || "").replace(/[&<>'"]/g, tag => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+      }[tag] || tag));
     }
 
     // Load target
@@ -201,7 +228,6 @@
         nameInput.value=""; phoneInput.value="";
         downloadMessage.textContent="Registration successful — thank you.";
 
-        // Show WhatsApp links after registration
         whatsappLinks.style.display = "block";
 
         setTimeout(()=>{ if(downloadMessage.textContent==="Registration successful — thank you.") downloadMessage.textContent=""; },3000);
@@ -256,8 +282,43 @@
 
     // Reset registrations
     resetBtn.addEventListener("click", async ()=>{
-      if(!confirm("Reset all registrations?")) return;
-      try{ await remove(registrationsRef); adminMsg.textContent="Registrations cleared"; whatsappLinks.style.display="none"; }catch(err){ alert("Failed: "+err.message); }
+      if(!confirm("Are you sure you want to completely clear all registrations? This cannot be undone.")) return;
+      try{ 
+        await remove(registrationsRef); 
+        adminMsg.textContent="Registrations cleared"; 
+        whatsappLinks.style.display="none"; 
+      }catch(err){ alert("Failed: "+err.message); }
+    });
+
+    // --- NEW: Export CSV ---
+    exportCsvBtn.addEventListener("click", async ()=>{
+      try {
+        const snap = await get(registrationsRef);
+        if(!snap.exists()){ alert("No registrations to export."); return; }
+        const data = snap.val();
+        
+        let csvContent = "data:text/csv;charset=utf-8,Name,Phone,Timestamp\n";
+        
+        for(const id of Object.keys(data)){
+          const r = data[id];
+          // Escape quotes for CSV
+          const nameStr = `"${(r.fn||"").replace(/"/g, '""')}"`;
+          const phoneStr = `"${(r.tel||"")}"`;
+          const timeStr = `"${(r.timestamp||"")}"`;
+          csvContent += `${nameStr},${phoneStr},${timeStr}\n`;
+        }
+        
+        const encodedUri = encodeURI(csvContent);
+        const a = document.createElement("a");
+        a.href = encodedUri;
+        const now = new Date().toISOString().replace(/[:.]/g,"-").slice(0,19);
+        a.download = `registrations_${now}.csv`;
+        document.body.appendChild(a); 
+        a.click(); 
+        document.body.removeChild(a);
+      } catch(err) { 
+        alert("Failed to export CSV: " + err.message); 
+      }
     });
 
     // Download VCF
@@ -271,7 +332,8 @@
           const r = data[id];
           lines.push("BEGIN:VCARD");
           lines.push("VERSION:3.0");
-          lines.push(`FN:${escapeV(r.fn||"No Name")}`);
+          // Appends the configured emoji right after the name
+          lines.push(`FN:${escapeV(r.fn||"No Name")}${vcfEmoji}`);
           if(r.tel) lines.push(`TEL:${escapeV(r.tel)}`);
           lines.push("END:VCARD");
         }
@@ -284,9 +346,28 @@
       }catch(err){ alert("Failed to build VCF: "+err.message); }
     });
 
-    // Real-time update
+    // Real-time update (handles progress bar and admin table)
     onValue(registrationsRef, (snap)=>{
-      const count = snap.exists()?Object.keys(snap.val()).length:0;
+      let count = 0;
+      dataTableBody.innerHTML = ""; // Clear table for new data
+      
+      if (snap.exists()) {
+        const data = snap.val();
+        const records = Object.values(data);
+        count = records.length;
+        
+        // Populate the Admin Table (latest on top)
+        records.reverse().forEach(r => {
+          const d = new Date(r.timestamp);
+          const timeString = isNaN(d) ? "Unknown" : d.toLocaleString();
+          const tr = document.createElement("tr");
+          tr.innerHTML = `<td>${escapeHTML(r.fn)}</td><td>${escapeHTML(r.tel)}</td><td>${timeString}</td>`;
+          dataTableBody.appendChild(tr);
+        });
+      } else {
+        dataTableBody.innerHTML = "<tr><td colspan='3' style='text-align:center; padding:15px;'>No registrations yet</td></tr>";
+      }
+
       registeredEl.textContent=count;
       remainingEl.textContent=Math.max(targetCount-count,0);
       const pct=targetCount>0?Math.min(Math.round((count/targetCount)*100),100):0;
