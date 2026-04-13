@@ -1,0 +1,4 @@
+node_modules/
+serviceAccountKey.json
+.wwebjs_auth/
+.env
