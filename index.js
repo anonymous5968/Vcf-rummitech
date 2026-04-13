@@ -18,11 +18,16 @@ admin.initializeApp({
 });
 const db = admin.database();
 
-// 2. Initialize WhatsApp Bot (Optimized for Heroku)
+// 2. Initialize WhatsApp Bot (Upgraded for Heroku Official Chrome)
 const client = new Client({
     authStrategy: new LocalAuth(),
     puppeteer: { 
-        args: ['--no-sandbox', '--disable-setuid-sandbox'] 
+        executablePath: process.env.GOOGLE_CHROME_BIN || null, // Tells Heroku where Chrome is
+        args: [
+            '--no-sandbox', 
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage' // Prevents memory crashes on Heroku's free tier
+        ] 
     }
 });
 
