@@ -17,23 +17,19 @@ admin.initializeApp({
   databaseURL: "https://rummitechvcf-default-rtdb.firebaseio.com" // <-- CHANGE THIS
 });
 const db = admin.database();
-// 2. Initialize WhatsApp Bot (Forced Official Chrome Path)
+// 2. Initialize WhatsApp Bot (Clean Heroku Setup)
 const client = new Client({
     authStrategy: new LocalAuth(),
     puppeteer: { 
-        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/google-chrome',
+        handleSIGINT: false,
         args: [
             '--no-sandbox',
             '--disable-setuid-sandbox',
             '--disable-dev-shm-usage',
-            '--disable-accelerated-2d-canvas',
-            '--no-first-run',
-            '--no-zygote',
-            '--disable-gpu'
+            '--disable-extensions'
         ] 
     }
 });
-
 client.on('qr', (qr) => {
     console.log('\nScan this QR code with your WhatsApp to link the bot:');
     qrcode.generate(qr, { small: true });
