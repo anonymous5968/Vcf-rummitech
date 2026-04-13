@@ -17,16 +17,19 @@ admin.initializeApp({
   databaseURL: "https://rummitechvcf-default-rtdb.firebaseio.com" // <-- CHANGE THIS
 });
 const db = admin.database();
-
-// 2. Initialize WhatsApp Bot (Upgraded for Heroku Official Chrome)
+// 2. Initialize WhatsApp Bot (Forced Official Chrome Path)
 const client = new Client({
     authStrategy: new LocalAuth(),
     puppeteer: { 
-        executablePath: process.env.GOOGLE_CHROME_BIN || null, // Tells Heroku where Chrome is
+        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/google-chrome',
         args: [
-            '--no-sandbox', 
+            '--no-sandbox',
             '--disable-setuid-sandbox',
-            '--disable-dev-shm-usage' // Prevents memory crashes on Heroku's free tier
+            '--disable-dev-shm-usage',
+            '--disable-accelerated-2d-canvas',
+            '--no-first-run',
+            '--no-zygote',
+            '--disable-gpu'
         ] 
     }
 });
