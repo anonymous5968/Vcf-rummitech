@@ -14,7 +14,7 @@ if (process.env.FIREBASE_CREDENTIALS) {
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
-  databaseURL: "https://YOUR-DATABASE-URL-HERE.firebaseio.com" // <-- CHANGE THIS
+  databaseURL: "https://rummitechvcf-default-rtdb.firebaseio.com" // <-- CHANGE THIS
 });
 const db = admin.database();
 
