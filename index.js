@@ -17,17 +17,15 @@ admin.initializeApp({
   databaseURL: "https://rummitechvcf-default-rtdb.firebaseio.com" // <-- CHANGE THIS
 });
 const db = admin.database();
-// 2. Initialize WhatsApp Bot (Clean Heroku Setup)
 const client = new Client({
     authStrategy: new LocalAuth(),
-    puppeteer: { 
-        handleSIGINT: false,
+    puppeteer: {
+        executablePath: '/usr/bin/google-chrome-stable', // Standard path for the jontewks buildpack
         args: [
             '--no-sandbox',
             '--disable-setuid-sandbox',
-            '--disable-dev-shm-usage',
-            '--disable-extensions'
-        ] 
+            '--disable-dev-shm-usage'
+        ],
     }
 });
 client.on('qr', (qr) => {
