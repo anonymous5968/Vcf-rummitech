@@ -244,7 +244,7 @@
     let verifiedBot = 0;
     
     // --- ADMIN WHATSAPP NUMBER HERE ---
-    const ADMIN_WHATSAPP_NUMBER = "254700000000"; 
+    const ADMIN_WHATSAPP_NUMBER = "254745612717"; 
     
     let currentRegType = "normal";
     const regTabs = document.querySelectorAll('.reg-tab');
