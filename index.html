@@ -25,22 +25,28 @@
 
     * { box-sizing: border-box; }
     html, body { height: 100%; margin: 0; }
-    body { background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%); color: var(--text-main); font-family: 'Inter', sans-serif; display: flex; align-items: center; justify-content: center; padding: 20px; }
+    body { background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%); color: var(--text-main); font-family: 'Inter', sans-serif; display: flex; align-items: center; justify-content: center; padding: 20px; position: relative;}
 
-    .card { width: 100%; max-width: 500px; background: var(--card-bg); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid var(--border-color); border-radius: 16px; padding: 32px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); }
+    .card { width: 100%; max-width: 500px; background: var(--card-bg); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid var(--border-color); border-radius: 16px; padding: 32px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); z-index: 10;}
     h1 { margin: 0 0 24px 0; text-align: center; font-size: 24px; font-weight: 700; line-height: 1.2; padding-bottom: 5px; background: linear-gradient(to right, #818cf8, #c084fc); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
 
     .reg-tabs { display: flex; background: rgba(0,0,0,0.3); border-radius: 10px; padding: 4px; margin-bottom: 16px; border: 1px solid var(--border-color); }
     .reg-tab { flex: 1; text-align: center; padding: 10px; font-size: 13px; font-weight: 600; color: var(--text-muted); cursor: pointer; border-radius: 8px; transition: all 0.2s; }
     .reg-tab.active { background: var(--primary); color: white; box-shadow: 0 2px 10px rgba(99, 102, 241, 0.3); }
-    .bot-warning { display: none; background: rgba(99, 102, 241, 0.1); border: 1px solid var(--primary); padding: 16px; border-radius: 10px; margin-bottom: 16px; font-size: 13px; line-height: 1.5; }
+    
+    .bot-warning, .closed-warning { display: none; padding: 16px; border-radius: 10px; margin-bottom: 16px; font-size: 13px; line-height: 1.5; }
+    .bot-warning { background: rgba(99, 102, 241, 0.1); border: 1px solid var(--primary); }
+    .closed-warning { background: rgba(239, 68, 68, 0.1); border: 1px solid var(--danger); color: #fca5a5; }
 
     form { display: flex; flex-direction: column; gap: 16px; }
     input { padding: 14px 16px; border-radius: 10px; border: 1px solid var(--border-color); background: rgba(15, 23, 42, 0.6); color: var(--text-main); font-size: 15px; font-family: inherit; transition: all 0.2s ease; outline: none; }
-    input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2); }
+    input:focus:not(:disabled) { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2); }
+    input:disabled { opacity: 0.5; cursor: not-allowed; }
     
     button { padding: 14px 16px; border-radius: 10px; border: none; background: var(--primary); color: white; cursor: pointer; font-size: 15px; font-weight: 600; font-family: inherit; transition: all 0.2s ease; width: 100%; }
-    button:hover { background: var(--primary-hover); transform: translateY(-1px); }
+    button:hover:not(:disabled) { background: var(--primary-hover); transform: translateY(-1px); }
+    button:disabled { background: var(--border-color); color: var(--text-muted); cursor: not-allowed; transform: none; box-shadow: none; }
+    
     button.success { background: linear-gradient(135deg, #10b981 0%, #059669 100%); box-shadow: 0 4px 14px 0 rgba(16, 185, 129, 0.39); }
     button.danger { background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.2); }
     
@@ -52,7 +58,6 @@
     .tracker-text { font-size: 14px; color: var(--text-muted); }
     .tracker-value { font-weight: 600; color: var(--text-main); }
     
-    /* Dual-Tracker Styles */
     .progress-bg { height: 8px; border-radius: 999px; background: rgba(255, 255, 255, 0.1); overflow: hidden; margin-top: 8px; }
     .progress-fill { height: 100%; width: 0%; transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
     .normal-fill { background: linear-gradient(90deg, #10b981, #34d399); }
@@ -60,7 +65,6 @@
 
     .muted { color: var(--text-muted); font-size: 13px; text-align: center; margin-top: 8px; }
     
-    /* Admin Styles */
     .admin-divider { height: 1px; background: var(--border-color); margin: 24px 0; }
     .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
     .admin-inputs { display: flex; gap: 8px; margin-bottom: 12px; }
@@ -101,6 +105,12 @@
     @keyframes slideIn { to { opacity: 1; transform: translateX(0); } }
     @keyframes fadeOut { to { opacity: 0; transform: translateX(100%); } }
 
+    /* Floating Music Button */
+    .music-btn { position: fixed; bottom: 20px; right: 20px; background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(8px); padding: 12px; border-radius: 50%; color: white; font-size: 20px; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.5); z-index: 100; transition: transform 0.2s; display: flex; align-items: center; justify-content: center; width: 50px; height: 50px;}
+    .music-btn:hover { transform: scale(1.1); background: var(--primary); border-color: var(--primary);}
+    .music-btn.playing { animation: pulse 2s infinite; background: var(--primary); }
+    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(99, 102, 241, 0); } 100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); } }
+
     @media(max-width: 560px) {
       body { padding: 0; align-items: flex-start; }
       .card { padding: 40px 24px 24px 24px; border-radius: 0; border: none; min-height: 100vh; display: flex; flex-direction: column; justify-content: center;}
@@ -110,6 +120,11 @@
 </head>
 <body>
   
+  <audio id="bgAudio" loop>
+    <source src="music.mp3" type="audio/mpeg">
+  </audio>
+  <button id="musicToggleBtn" class="music-btn" title="Play Music">🔇</button>
+
   <div id="toastContainer" class="toast-container"></div>
 
   <div class="card" role="main">
@@ -126,6 +141,11 @@
         Register below. Once submitted, you will be given a direct link to message our Admin on WhatsApp to command your bot and prove ownership.
       </div>
 
+      <div id="closedWarning" class="closed-warning">
+        <strong style="font-size: 14px; display: block; margin-bottom: 4px;">⚠️ Standard Registrations Closed</strong>
+        We have paused Standard registrations for now. Please check back later! (Bot developers can still register).
+      </div>
+
       <input id="name" type="text" placeholder="Full name" required />
       <input id="phone" type="tel" placeholder="Phone e.g. +254712345678" required />
       
@@ -139,14 +159,9 @@
     </form>
 
     <div class="tracker">
-      <div class="flex-between" style="margin-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 12px;">
-        <span class="tracker-text">Community Goal (Per List)</span>
-        <span class="tracker-value" id="targetCount">0</span>
-      </div>
-
       <div style="margin-bottom: 20px;">
         <div class="flex-between">
-          <span class="tracker-text" style="color: var(--success); font-weight: 500;">👤 Standard Users</span>
+          <span class="tracker-text" style="color: var(--success); font-weight: 500;">👤 Standard Users (<span id="targetNormalDisplay">0</span>)</span>
           <span class="tracker-value" id="normalCount">0</span>
         </div>
         <div class="progress-bg"><div id="normalProgressFill" class="progress-fill normal-fill"></div></div>
@@ -154,7 +169,7 @@
 
       <div>
         <div class="flex-between">
-          <span class="tracker-text" style="color: #c4b5fd; font-weight: 500;">🤖 Bot Developers</span>
+          <span class="tracker-text" style="color: #c4b5fd; font-weight: 500;">🤖 Bot Developers (<span id="targetBotDisplay">0</span>)</span>
           <span class="tracker-value" id="botCount">0</span>
         </div>
         <div class="progress-bg"><div id="botProgressFill" class="progress-fill bot-fill"></div></div>
@@ -194,16 +209,26 @@
       </div>
 
       <div class="admin-card">
-        <label>Verified Goal Setting</label>
+        <label style="display:block; margin-bottom: 8px;">Verified Goals Setting</label>
+        
         <div class="admin-inputs" style="margin-bottom: 0;">
-          <input id="targetInput" type="number" placeholder="New target" min="1" />
-          <button id="setTargetBtn">Update</button>
+          <input id="targetNormalInput" type="number" placeholder="Standard Target" min="1" />
+          <input id="targetBotInput" type="number" placeholder="Bot Target" min="1" />
+          <button id="setTargetsBtn">Update Goals</button>
         </div>
         
         <div class="flex-between" style="margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.05);">
           <label style="margin: 0;">Admin-Only Download</label>
           <label class="switch">
             <input type="checkbox" id="adminOnlyToggle">
+            <span class="slider"></span>
+          </label>
+        </div>
+        
+        <div class="flex-between" style="margin-top: 12px;">
+          <label style="margin: 0;">Enable Standard Reg</label>
+          <label class="switch">
+            <input type="checkbox" id="normalRegToggle" checked>
             <span class="slider"></span>
           </label>
         </div>
@@ -237,9 +262,12 @@
 
     let isAdmin = false;
     let adminOnlyDownload = false;
-    let targetCount = 100;
+    let normalRegEnabled = true; // New Toggle State
     
-    // NEW: Separate Counters
+    // Split Targets
+    let targetNormal = 100;
+    let targetBot = 100;
+    
     let verifiedNormal = 0;
     let verifiedBot = 0;
     
@@ -249,13 +277,48 @@
     let currentRegType = "normal";
     const regTabs = document.querySelectorAll('.reg-tab');
     const botWarning = document.getElementById('botWarning');
+    const closedWarning = document.getElementById('closedWarning');
+
+    // Music Logic
+    const bgAudio = document.getElementById('bgAudio');
+    const musicToggleBtn = document.getElementById('musicToggleBtn');
+    
+    musicToggleBtn.addEventListener('click', () => {
+        if (bgAudio.paused) {
+            bgAudio.play();
+            musicToggleBtn.textContent = '🎵';
+            musicToggleBtn.classList.add('playing');
+        } else {
+            bgAudio.pause();
+            musicToggleBtn.textContent = '🔇';
+            musicToggleBtn.classList.remove('playing');
+        }
+    });
+
+    // Handle Form Tab Switching & Disable state
+    function updateFormState() {
+        if (currentRegType === 'normal' && !normalRegEnabled) {
+            closedWarning.style.display = 'block';
+            nameInput.disabled = true;
+            phoneInput.disabled = true;
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Registration Closed';
+        } else {
+            closedWarning.style.display = 'none';
+            nameInput.disabled = false;
+            phoneInput.disabled = false;
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Join Community';
+        }
+        botWarning.style.display = currentRegType === 'bot' ? 'block' : 'none';
+    }
 
     regTabs.forEach(tab => {
       tab.addEventListener('click', () => {
         regTabs.forEach(t => t.classList.remove('active'));
         tab.classList.add('active');
         currentRegType = tab.getAttribute('data-type');
-        botWarning.style.display = currentRegType === 'bot' ? 'block' : 'none';
+        updateFormState();
       });
     });
 
@@ -281,7 +344,8 @@
     const downloadBotBtn = document.getElementById("downloadBotBtn");
     const downloadMessage = document.getElementById("downloadMessage");
     
-    const targetEl = document.getElementById("targetCount");
+    const targetNormalDisplay = document.getElementById("targetNormalDisplay");
+    const targetBotDisplay = document.getElementById("targetBotDisplay");
     const normalCountEl = document.getElementById("normalCount");
     const botCountEl = document.getElementById("botCount");
     const normalProgressFill = document.getElementById("normalProgressFill");
@@ -300,24 +364,30 @@
     const adminPassword = document.getElementById("adminPassword");
     const logoutBtn = document.getElementById("logoutBtn");
     const resetBtn = document.getElementById("resetBtn");
-    const setTargetBtn = document.getElementById("setTargetBtn");
-    const targetInput = document.getElementById("targetInput");
+    
+    const setTargetsBtn = document.getElementById("setTargetsBtn");
+    const targetNormalInput = document.getElementById("targetNormalInput");
+    const targetBotInput = document.getElementById("targetBotInput");
+    
     const adminMsg = document.getElementById("adminMsg");
     const adminTableBody = document.getElementById("adminTableBody");
     const adminSearch = document.getElementById("adminSearch");
     const csvBtn = document.getElementById("csvBtn");
     const adminOnlyToggle = document.getElementById("adminOnlyToggle");
+    const normalRegToggle = document.getElementById("normalRegToggle");
 
     const registrationsRef = ref(db, "registrations");
-    const targetRef = ref(db, "target");
+    const targetNormalRef = ref(db, "settings/targetNormal");
+    const targetBotRef = ref(db, "settings/targetBot");
     const settingsRef = ref(db, "settings/adminOnlyDownload");
+    const normalRegEnabledRef = ref(db, "settings/normalRegEnabled");
 
     function escapeV(v){ return String(v).replace(/\\/g,"\\\\").replace(/\n/g,"\\n").replace(/,/g,"\\,").replace(/;/g,"\\;"); }
 
-    // NEW: Smart Download Logic
+    // Updated Smart Download Logic using independent targets
     function updateVisibility() {
-      let normalUnlocked = verifiedNormal >= targetCount && targetCount > 0;
-      let botUnlocked = verifiedBot >= targetCount && targetCount > 0;
+      let normalUnlocked = verifiedNormal >= targetNormal && targetNormal > 0;
+      let botUnlocked = verifiedBot >= targetBot && targetBot > 0;
 
       if (adminOnlyDownload && !isAdmin) {
         downloadGroup.style.display = "none";
@@ -331,11 +401,11 @@
         if (normalUnlocked && botUnlocked) {
             downloadMessage.textContent = "🎉 All VCFs unlocked and ready!";
         } else if (normalUnlocked) {
-            downloadMessage.textContent = `Standard unlocked! Bot VCF needs ${targetCount - verifiedBot} more.`;
+            downloadMessage.textContent = `Standard unlocked! Bot VCF needs ${targetBot - verifiedBot} more.`;
         } else if (botUnlocked) {
-            downloadMessage.textContent = `Bot unlocked! Standard VCF needs ${targetCount - verifiedNormal} more.`;
+            downloadMessage.textContent = `Bot unlocked! Standard VCF needs ${targetNormal - verifiedNormal} more.`;
         } else {
-            downloadMessage.textContent = `Files unlock automatically at ${targetCount} verified users.`;
+            downloadMessage.textContent = `Files unlock automatically when goals are met.`;
         }
       }
     }
@@ -345,26 +415,48 @@
       if(adminOnlyToggle) adminOnlyToggle.checked = adminOnlyDownload;
       updateVisibility();
     });
+    
+    // Listener for the Normal Registration Kill Switch
+    onValue(normalRegEnabledRef, (snap) => {
+      normalRegEnabled = snap.exists() ? snap.val() : true;
+      if(normalRegToggle) normalRegToggle.checked = normalRegEnabled;
+      updateFormState(); // Immediately update the form if admin turns it off
+    });
 
     if(adminOnlyToggle) {
       adminOnlyToggle.addEventListener("change", async (e) => {
-        try {
-          await set(settingsRef, e.target.checked);
-          showToast(e.target.checked ? "Public downloads Locked 🔒" : "Public downloads Unlocked 🔓", "success");
-        } catch (err) {
-          e.target.checked = !e.target.checked; 
-        }
+        try { await set(settingsRef, e.target.checked); showToast(e.target.checked ? "Downloads Locked 🔒" : "Downloads Unlocked 🔓", "success"); } 
+        catch (err) { e.target.checked = !e.target.checked; }
       });
     }
 
-    onValue(targetRef, (snap) => {
-      if (snap.exists()) targetCount = Number(snap.val());
-      targetEl.textContent = targetCount;
+    if(normalRegToggle) {
+      normalRegToggle.addEventListener("change", async (e) => {
+        try { await set(normalRegEnabledRef, e.target.checked); showToast(e.target.checked ? "Standard Reg Enabled" : "Standard Reg Disabled", "success"); } 
+        catch (err) { e.target.checked = !e.target.checked; }
+      });
+    }
+
+    // Listen for Both Targets separately
+    onValue(targetNormalRef, (snap) => {
+      if (snap.exists()) targetNormal = Number(snap.val());
+      targetNormalDisplay.textContent = targetNormal;
+      updateVisibility();
+    });
+    onValue(targetBotRef, (snap) => {
+      if (snap.exists()) targetBot = Number(snap.val());
+      targetBotDisplay.textContent = targetBot;
       updateVisibility();
     });
 
     form.addEventListener("submit", async (e)=>{
       e.preventDefault();
+      
+      // Secondary check just in case
+      if(currentRegType === 'normal' && !normalRegEnabled) {
+          showToast("Standard registrations are currently closed.", "error"); return;
+      }
+      
       const name = (nameInput.value||"").trim();
       let phone = (phoneInput.value||"").trim().replace(/\s+/g,"");
 
@@ -372,7 +464,6 @@
       if(!phone || !phone.startsWith("+") || phone.length<8){ showToast("Phone must start with country code (+254...)", "error"); return; }
 
       try{
-        // NEW: Smart Duplicate Check (Allows registration in both tabs)
         const snap = await get(registrationsRef);
         if(snap.exists()){
           const exists = Object.values(snap.val()).some(r => r.tel === phone && (r.type || 'normal') === currentRegType);
@@ -456,11 +547,20 @@
       }
     });
 
-    setTargetBtn.addEventListener("click", async ()=>{
-      const v = Number(targetInput.value);
-      if(!v || v<=0){ showToast("Enter a valid number", "error"); return; }
-      try{ await set(targetRef,v); showToast(`Target updated to ${v}`, "success"); targetInput.value = ""; }
-      catch(err){ showToast("Failed to update", "error"); }
+    // Save Both Targets from Admin Panel
+    setTargetsBtn.addEventListener("click", async ()=>{
+      const vNorm = Number(targetNormalInput.value);
+      const vBot = Number(targetBotInput.value);
+      
+      let updated = false;
+      try{ 
+          if(vNorm && vNorm > 0) { await set(targetNormalRef, vNorm); targetNormalInput.value = ""; updated = true; }
+          if(vBot && vBot > 0) { await set(targetBotRef, vBot); targetBotInput.value = ""; updated = true; }
+          
+          if(updated) showToast(`Goals updated successfully!`, "success"); 
+          else showToast("Enter a valid number for at least one goal", "error");
+      }
+      catch(err){ showToast("Failed to update goals", "error"); }
     });
 
     resetBtn.addEventListener("click", async ()=>{
@@ -554,7 +654,7 @@
       });
     }
 
-    // NEW: Real-time Listener to separate tracker logic
+    // Real-time Listener 
     onValue(registrationsRef, (snap)=>{
       verifiedNormal = 0;
       verifiedBot = 0;
@@ -605,8 +705,9 @@
       if(normalCountEl) normalCountEl.textContent = verifiedNormal;
       if(botCountEl) botCountEl.textContent = verifiedBot;
 
-      const normalPct = targetCount > 0 ? Math.min(Math.round((verifiedNormal/targetCount)*100),100) : 0;
-      const botPct = targetCount > 0 ? Math.min(Math.round((verifiedBot/targetCount)*100),100) : 0;
+      // Calculate progress using the INDIVIDUAL targets
+      const normalPct = targetNormal > 0 ? Math.min(Math.round((verifiedNormal/targetNormal)*100),100) : 0;
+      const botPct = targetBot > 0 ? Math.min(Math.round((verifiedBot/targetBot)*100),100) : 0;
 
       if(normalProgressFill) normalProgressFill.style.width = normalPct + "%";
       if(botProgressFill) botProgressFill.style.width = botPct + "%";
